@@ -1,0 +1,52 @@
+name: Generar GIF GFS Sudamérica
+
+on:
+  schedule:
+    - cron: '30 9 * * *'    # 09:30 UTC = 06:30 Argentina
+  workflow_dispatch:         # permite ejecutarlo a mano para probar
+
+permissions:
+  contents: write
+
+jobs:
+  gif:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Descargar frames y armar GIF
+        run: |
+          set -e
+          FRAMES="1 5 9 13 17 21 25"   # fh 24,48,72,96,120,144,168
+          mkdir -p frames
+          OK=0
+          # Busca la última corrida GFS completa, retrocediendo de a 6h
+          for back in 6 12 18 24; do
+            H=$(date -u -d "-${back} hours" +%-H)
+            RUNTIME=$(date -u -d "-${back} hours" +%Y%m%d)$(printf '%02d' $(( H / 6 * 6 )))
+            echo "Probando corrida $RUNTIME"
+            OK=1
+            for f in $FRAMES; do
+              URL="https://www.tropicaltidbits.com/analysis/models/gfs/${RUNTIME}/gfs_apcpn24_samer_${f}.png"
+              if ! curl -fsSL --retry 2 \
+                   -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" \
+                   -e "https://www.tropicaltidbits.com/analysis/models/" \
+                   -o "frames/${f}.png" "$URL"; then
+                OK=0; break
+              fi
+            done
+            [ "$OK" = "1" ] && break
+          done
+          [ "$OK" = "1" ] || { echo "No hay corrida completa disponible"; exit 1; }
+
+          convert -delay 100 -loop 0 \
+            $(for f in $FRAMES; do echo frames/${f}.png; done) \
+            GFS_precip24h_Sudamerica_168h.gif
+
+      - name: Commitear GIF
+        run: |
+          git config user.name "gif-bot"
+          git config user.email "gif-bot@users.noreply.github.com"
+          git add GFS_precip24h_Sudamerica_168h.gif
+          git commit -m "GIF $(date -u +%F)" || echo "Sin cambios"
+          git push
