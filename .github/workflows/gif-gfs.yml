@@ -18,7 +18,7 @@ jobs:
       - name: Descargar frames y armar GIF
         run: |
           set -e
-          FRAMES="1 5 9 13 17 21 25"   # fh 24,48,72,96,120,144,168
+          FRAMES=$(seq 1 25)   # fh 24 a 168 cada 6 horas
           mkdir -p frames
           OK=0
           # Busca la última corrida GFS completa, retrocediendo de a 6h
