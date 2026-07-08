@@ -2,7 +2,7 @@ name: Generar GIF GFS Sudamérica
 
 on:
   schedule:
-    - cron: '30 1,7,13,19 * * *'    # 09:30 UTC = 06:30 Argentina
+    - cron: '30 1,7,13,19 * * *'    # 4 corridas diarias, ~7.5h después de cada corrida GFS (00/06/12/18Z)
   workflow_dispatch:         # permite ejecutarlo a mano para probar
 
 permissions:
